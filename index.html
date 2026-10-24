@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AstroDynamics Mission Control | محاكي ديناميكا المدارات والتحكم في المهام الفضائية العميقة</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="./assets/index-BCwnPoN7.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-C8gjgTda.css">
+</head>
+<body class="rtl-mode">
+
+  <!-- Three.js 3D Viewport -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Top Flight Director Navigation Bar -->
+  <header class="flight-director-bar">
+    <div class="brand-section">
+      <div class="mission-logo-radar"></div>
+      <div>
+        <div class="brand-title" data-i18n="appTitle">محاكي ديناميكا المدارات والتحكم في المهام الفضائية</div>
+        <div class="brand-subtitle" data-i18n="appSubtitle">غرفة العمليات المركزية لميكانيكا الفضاء ومسارات الملاحة العميقة</div>
+      </div>
+      <div class="author-pill" data-i18n="authorBadge">تطوير وهندسة: أ. طارق ابوعشي</div>
+    </div>
+
+    <!-- Time Warp Controls -->
+    <div class="time-warp-bar">
+      <button id="btn-warp-pause" class="warp-btn">⏸ 0x</button>
+      <button id="btn-warp-1x" class="warp-btn active">1x</button>
+      <button id="btn-warp-10x" class="warp-btn">10x</button>
+      <button id="btn-warp-100x" class="warp-btn">100x</button>
+      <button id="btn-warp-1000x" class="warp-btn">1000x</button>
+    </div>
+
+    <!-- Quick Camera Selector -->
+    <div class="camera-quick-bar">
+      <button id="btn-cam-chase" class="cam-btn active" data-i18n="camCockpit">كاميرا المركبة</button>
+      <button id="btn-cam-earth" class="cam-btn" data-i18n="camEarth">منظور الأرض</button>
+      <button id="btn-cam-solar" class="cam-btn" data-i18n="camSolar">المجموعة الشمسية</button>
+      <button id="btn-cam-target" class="cam-btn" data-i18n="camTarget">تتبع الهدف</button>
+    </div>
+
+    <!-- Director Tools -->
+    <div class="director-actions">
+      <button id="btn-audio-toggle" class="icon-btn" title="Audio Sound Synth">🔊</button>
+      <button id="btn-lang-toggle" class="icon-btn">English</button>
+    </div>
+  </header>
+
+  <!-- Main Floating HUD Interface -->
+  <main class="hud-layout">
+
+    <!-- Left Rail: Real-time Telemetry & Strip Charts -->
+    <aside class="hud-left-rail">
+
+      <!-- Flight Telemetry HUD Card -->
+      <div class="glass-panel">
+        <div class="panel-header">
+          <span data-i18n="flightStatus">حالة المسار المداري</span>
+          <span id="dsn-los-badge" class="badge-online">LOCKED / ONLINE</span>
+        </div>
+
+        <div class="telemetry-grid">
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="orbitalVelocity">السرعة المدارية (v)</span>
+            <span id="hud-speed" class="cell-value highlight-cyan">7.726 km/s</span>
+          </div>
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="altitude">الارتفاع الفعلي</span>
+            <span id="hud-alt" class="cell-value highlight-cyan">500.0 km</span>
+          </div>
+
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="periapsisAlt">ارتفاع الحضيض (rp)</span>
+            <span id="hud-rp" class="cell-value highlight-green">490.2 km</span>
+          </div>
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="apoapsisAlt">ارتفاع الأوج (ra)</span>
+            <span id="hud-ra" class="cell-value highlight-amber">510.8 km</span>
+          </div>
+
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="orbitalPeriod">الزمن الدوري (T)</span>
+            <span id="hud-period" class="cell-value">1h 34m 32s</span>
+          </div>
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="specificEnergy">الطاقة المدارية (ε)</span>
+            <span id="hud-energy" class="cell-value">-28.98 km²/s²</span>
+          </div>
+
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="fuelRemaining">الوقود الصاروخي</span>
+            <span id="hud-fuel" class="cell-value highlight-amber">1500.0 kg (100%)</span>
+          </div>
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="deltaVRemaining">رصيد سرعة دلتا-V</span>
+            <span id="hud-deltav-rem" class="cell-value highlight-green">2.384 km/s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live 2D Telemetry Strip-Charts -->
+      <div class="glass-panel charts-container">
+        <div class="chart-wrapper">
+          <div class="chart-title">
+            <span data-i18n="chartVelocity">مخطط تغير السرعة المدارية (km/s)</span>
+          </div>
+          <canvas id="chart-velocity" class="strip-chart" width="290" height="38"></canvas>
+        </div>
+
+        <div class="chart-wrapper">
+          <div class="chart-title">
+            <span data-i18n="chartDeltaV">استهلاك وقود دلتا-V الصاروخي</span>
+          </div>
+          <canvas id="chart-deltav" class="strip-chart" width="290" height="38"></canvas>
+        </div>
+
+        <div class="chart-wrapper">
+          <div class="chart-title">
+            <span data-i18n="chartSnr">جودة إشارة شبكة DSN (dB)</span>
+          </div>
+          <canvas id="chart-snr" class="strip-chart" width="290" height="38"></canvas>
+        </div>
+      </div>
+
+      <!-- ADCS Attitude Readout Card -->
+      <div class="glass-panel">
+        <div class="panel-header">
+          <span data-i18n="adcsMode">نظام التوجيه والتحكم الوضعي ADCS</span>
+          <span id="hud-adcs-mode" class="badge-online">PROGRADE</span>
+        </div>
+        <div class="telemetry-grid">
+          <div class="telemetry-cell" style="grid-column: span 2;">
+            <span class="cell-label">زوايا أويلر (Euler Roll / Pitch / Yaw)</span>
+            <span id="hud-euler" class="cell-value highlight-cyan">R: 0.0° | P: 0.0° | Y: 0.0°</span>
+          </div>
+          <div class="telemetry-cell" style="grid-column: span 2;">
+            <span class="cell-label">كواتيرنيون التوجيه (Quaternion [x, y, z, w])</span>
+            <span id="hud-quat" class="cell-value" style="font-size: 11px;">[0.000, 0.000, 0.000, 1.000]</span>
+          </div>
+          <div class="telemetry-cell">
+            <span class="cell-label" data-i18n="pointingError">خطأ زاوية التوجيه</span>
+            <span id="hud-pointing-error" class="cell-value highlight-green">0.08°</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Right Console: Interactive Flight Operations -->
+    <section class="hud-right-panel">
+
+      <div class="glass-panel">
+        <!-- Navigation Tabs -->
+        <div class="panel-tab-bar">
+          <button class="tab-btn active" data-tab="kepler" data-i18n="tabKepler">عناصر كبلر</button>
+          <button class="tab-btn" data-tab="maneuvers" data-i18n="tabManeuvers">مخطط المناورات</button>
+          <button class="tab-btn" data-tab="missions" data-i18n="tabMissions">ملفات المهام</button>
+          <button class="tab-btn" data-tab="dsn" data-i18n="tabDsn">شبكة DSN</button>
+          <button class="tab-btn" data-tab="lagrange" data-i18n="tabLagrange">نقاط لاغرانج</button>
+        </div>
+
+        <!-- Tab 1: Keplerian Orbital Elements Controller -->
+        <div id="tab-kepler" class="tab-content active">
+          <!-- Mathematical Formula -->
+          <div class="formula-callout" id="eq-vis-viva"></div>
+
+          <!-- Slider 1: Semi-major axis -->
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <span class="slider-label" data-i18n="semiMajorAxis">المحور شبه الرئيسي (a) [km]</span>
+              <input id="input-sma-num" type="number" class="slider-num-input" value="6871" step="50" min="6450" max="150000">
+            </div>
+            <input id="input-sma-slider" type="range" min="6450" max="60000" step="50" value="6871">
+          </div>
+
+          <!-- Slider 2: Eccentricity -->
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <span class="slider-label" data-i18n="eccentricity">الانحراف المداري (e)</span>
+              <input id="input-ecc-num" type="number" class="slider-num-input" value="0.0015" step="0.005" min="0" max="1.4">
+            </div>
+            <input id="input-ecc-slider" type="range" min="0" max="0.95" step="0.001" value="0.0015">
+          </div>
+
+          <!-- Slider 3: Inclination -->
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <span class="slider-label" data-i18n="inclination">ميلان المدار (i) [°]</span>
+              <input id="input-inc-num" type="number" class="slider-num-input" value="28.5" step="1" min="0" max="180">
+            </div>
+            <input id="input-inc-slider" type="range" min="0" max="180" step="0.5" value="28.5">
+          </div>
+
+          <!-- Slider 4: RAAN -->
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <span class="slider-label" data-i18n="raan">صعود العقدة الصاعدة (Ω) [°]</span>
+              <input id="input-raan-num" type="number" class="slider-num-input" value="30.0" step="5" min="0" max="360">
+            </div>
+            <input id="input-raan-slider" type="range" min="0" max="360" step="1" value="30.0">
+          </div>
+
+          <!-- Slider 5: Argument of Periapsis -->
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <span class="slider-label" data-i18n="argPeriapsis">حجة نقطة الحضيض (ω) [°]</span>
+              <input id="input-argp-num" type="number" class="slider-num-input" value="45.0" step="5" min="0" max="360">
+            </div>
+            <input id="input-argp-slider" type="range" min="0" max="360" step="1" value="45.0">
+          </div>
+
+          <!-- Slider 6: True Anomaly -->
+          <div class="slider-group">
+            <div class="slider-label-row">
+              <span class="slider-label" data-i18n="trueAnomaly">الشذوذ الحقيقي (ν) [°]</span>
+              <input id="input-nu-num" type="number" class="slider-num-input" value="0.0" step="5" min="0" max="360">
+            </div>
+            <input id="input-nu-slider" type="range" min="0" max="360" step="1" value="0.0">
+          </div>
+
+          <!-- Preset Orbits -->
+          <div class="cell-label" style="margin-top: 10px;">المدارات القياسية النموذجية (Standard Orbit Presets)</div>
+          <div class="preset-button-grid">
+            <button id="btn-preset-leo" class="preset-btn">LEO (محطة الفضاء)</button>
+            <button id="btn-preset-sso" class="preset-btn">SSO (متزامن شمسياً)</button>
+            <button id="btn-preset-molniya" class="preset-btn">Molniya (شديد الإهليلجية)</button>
+            <button id="btn-preset-geo" class="preset-btn">GEO (ثابت بالنسبة للأرض)</button>
+            <button id="btn-preset-escape" class="preset-btn">Escape (مسار هروب)</button>
+            <button id="btn-reset-orbit" class="preset-btn" style="border-color: var(--amber-glow); color: var(--amber-glow);" data-i18n="resetOrbit">إعادة ضبط المدار</button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Interplanetary Maneuvers & Delta-V Planner -->
+        <div id="tab-maneuvers" class="tab-content">
+          <div class="formula-callout" id="eq-hohmann"></div>
+
+          <!-- Hohmann Inputs -->
+          <div class="telemetry-grid" style="margin-bottom: 8px;">
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="initialRadius">نصف قطر المدار الابتدائي (r1) [km]</span>
+              <input id="hohmann-r1" type="number" class="slider-num-input" style="width: 100%; text-align: start;" value="6771">
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="finalRadius">نصف قطر مدار الهدف (r2) [km]</span>
+              <input id="hohmann-r2" type="number" class="slider-num-input" style="width: 100%; text-align: start;" value="42164">
+            </div>
+          </div>
+
+          <div class="telemetry-grid" style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; margin-bottom: 10px;">
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="burn1DeltaV">الحرقة الأولى (Δv1)</span>
+              <span id="hohmann-dv1" class="cell-value highlight-cyan">2425.9 m/s</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="burn2DeltaV">الحرقة الثانية (Δv2)</span>
+              <span id="hohmann-dv2" class="cell-value highlight-cyan">1464.2 m/s</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="totalDeltaV">إجمالي دلتا-V المطلوبة (Δv)</span>
+              <span id="hohmann-dv-tot" class="cell-value highlight-amber">3.890 km/s</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="transferTime">زمن الرحلة الانتقالية</span>
+              <span id="hohmann-time" class="cell-value">5.26 h (0.2 d)</span>
+            </div>
+          </div>
+
+          <!-- Bi-elliptic Option -->
+          <div class="cell-label" style="margin-top: 10px;">الانتقال ثنائي القطع الناقص (Bi-Elliptic Transfer Option)</div>
+          <div class="telemetry-grid" style="margin-top: 4px;">
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="intermediateRadius">أوج وسيط (rb) [km]</span>
+              <input id="bielliptic-rb" type="number" class="slider-num-input" style="width: 100%; text-align: start;" value="80000">
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label">مقارنة الكفاءة باهوهمان</span>
+              <span id="bielliptic-efficiency" class="cell-value highlight-green" style="font-size: 11px;">حساب الكفاءة المدارية...</span>
+            </div>
+          </div>
+
+          <!-- Gravitational Slingshot Flyby -->
+          <div class="cell-label" style="margin-top: 12px;" data-i18n="slingshotAssist">المقلاع الجاذبي (Gravity Assist Slingshot)</div>
+          <div class="formula-callout" id="eq-slingshot"></div>
+          <div class="telemetry-grid">
+            <div class="telemetry-cell">
+              <span class="cell-label">سرعة الاقتراب v_inf (km/s)</span>
+              <input id="slingshot-vinf" type="number" class="slider-num-input" style="width: 100%; text-align: start;" value="9.5">
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label">ارتفاع الحضيض rp (km)</span>
+              <input id="slingshot-rp" type="number" class="slider-num-input" style="width: 100%; text-align: start;" value="350000">
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label">زاوية الانحراف (Turn Angle δ)</span>
+              <span id="slingshot-delta-deg" class="cell-value highlight-cyan">87.4°</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label">مكسب السرعة الشمسي (ΔV_helio)</span>
+              <span id="slingshot-dv-helio" class="cell-value highlight-green">+13.12 km/s</span>
+            </div>
+          </div>
+
+          <!-- Real-Time Impulsive Directional Burn Controls -->
+          <div class="cell-label" style="margin-top: 14px;">تنفيذ حرق صاروخي فوري (Real-Time Burn Vectors)</div>
+          <div style="display: flex; gap: 8px; align-items: center; margin: 6px 0;">
+            <span class="cell-label">قوة الدفعة (Δv) [km/s]:</span>
+            <input id="burn-dv-amount" type="number" class="slider-num-input" value="0.10" step="0.05" min="0.01" max="2.0">
+          </div>
+          <div class="burn-controls-grid">
+            <button id="btn-burn-prograde" class="burn-btn">أمامي (+Prograde)</button>
+            <button id="btn-burn-retrograde" class="burn-btn">عكسي (-Retrograde)</button>
+            <button id="btn-burn-normal" class="burn-btn">عمودي (+Normal)</button>
+            <button id="btn-burn-antinormal" class="burn-btn">مضاد (-AntiNormal)</button>
+            <button id="btn-burn-radialin" class="burn-btn">شعاعي داخل (-RadialIn)</button>
+            <button id="btn-burn-radialout" class="burn-btn">شعاعي خارج (+RadialOut)</button>
+          </div>
+        </div>
+
+        <!-- Tab 3: Turnkey Mission Profiles -->
+        <div id="tab-missions" class="tab-content">
+          <!-- Artemis -->
+          <div class="mission-card" id="card-artemis">
+            <div class="mission-card-title" data-i18n="missionArtemisTitle">أرتميس: بوابة القمر ومدار الهالة NRHO</div>
+            <div class="mission-card-desc" data-i18n="missionArtemisDesc">حقن المدار القمري (TLI)، وأسر المدار القمري (LOI)، والدخول في مدار الهالة شبه المستطيل (NRHO) المخصص للمحطة القمرية.</div>
+            <button id="btn-mission-artemis" class="btn-launch-mission" data-i18n="btnLaunchMission">تحميل وتنفيذ المهمة</button>
+          </div>
+
+          <!-- Mars 2026 -->
+          <div class="mission-card" id="card-mars">
+            <div class="mission-card-title" data-i18n="missionMarsTitle">رحلة المريخ 2026 والكبح الجوي</div>
+            <div class="mission-card-desc" data-i18n="missionMarsDesc">قوس انتقال هوهمان الشمسي من مدار الأرض بسرعة انطلاق 11.2 كم/ث، مع مناورة الكبح الجوي في غلاف المريخ الرقيق.</div>
+            <button id="btn-mission-mars2026" class="btn-launch-mission" data-i18n="btnLaunchMission">تحميل وتنفيذ المهمة</button>
+          </div>
+
+          <!-- JWST L2 -->
+          <div class="mission-card" id="card-jwst">
+            <div class="mission-card-title" data-i18n="missionJwstTitle">تلسكوب جيمس ويب (نقطة لاغرانج L2)</div>
+            <div class="mission-card-desc" data-i18n="missionJwstDesc">مدار هالة متوازن ثلاثي الأبعاد حول نقطة لاغرانج L2 على مسافة 1.5 مليون كم، مع توجيه الدرع الشمسي لحجب حرارة الشمس والأرض.</div>
+            <button id="btn-mission-jwst" class="btn-launch-mission" data-i18n="btnLaunchMission">تحميل وتنفيذ المهمة</button>
+          </div>
+
+          <!-- Voyager -->
+          <div class="mission-card" id="card-voyager">
+            <div class="mission-card-title" data-i18n="missionVoyagerTitle">رحلة فوياجر والمقلاع الجاذبي لكوكب المشتري</div>
+            <div class="mission-card-desc" data-i18n="missionVoyagerDesc">مسار هروب هائل بقطع زائد فائق السرعة متجاوزاً جاذبية المشتري وزحل نحو فضاء النجوم السحيق خارج حافة الهيليوسفير.</div>
+            <button id="btn-mission-voyager" class="btn-launch-mission" data-i18n="btnLaunchMission">تحميل وتنفيذ المهمة</button>
+          </div>
+        </div>
+
+        <!-- Tab 4: Deep Space Network (DSN) Telemetry & RF Link Budget -->
+        <div id="tab-dsn" class="tab-content">
+          <div class="formula-callout" id="eq-friis"></div>
+
+          <div class="telemetry-grid">
+            <div class="telemetry-cell" style="grid-column: span 2;">
+              <span class="cell-label" data-i18n="activeStation">المحطة الأرضية النشطة</span>
+              <span id="dsn-station-name" class="cell-value highlight-cyan">Goldstone DSN (DSS-14, 70m)</span>
+            </div>
+
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="owlt">زمن انتقال الضوء (OWLT)</span>
+              <span id="dsn-owlt" class="cell-value highlight-green">0.02 s</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="fspl">فقدان المسار (FSPL)</span>
+              <span id="dsn-fspl" class="cell-value">168.4 dB</span>
+            </div>
+
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="signalStrength">قدرة الإشارة (Pr)</span>
+              <span id="dsn-rx-power" class="cell-value">-86.2 dBm</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="snr">نسبة الإشارة إلى الضوضاء (SNR)</span>
+              <span id="dsn-snr" class="cell-value highlight-green">24.8 dB</span>
+            </div>
+
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="dopplerShift">انزياح دوبلر الترددي</span>
+              <span id="dsn-doppler" class="cell-value highlight-amber">+14.28 kHz</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label" data-i18n="bitrate">معدل تدفق البيانات</span>
+              <span id="dsn-bitrate" class="cell-value">2048 kbps</span>
+            </div>
+
+            <div class="telemetry-cell">
+              <span class="cell-label">زاوية الارتفاع فوق الأفق</span>
+              <span id="dsn-elevation" class="cell-value highlight-cyan">42.8°</span>
+            </div>
+          </div>
+
+          <!-- ADCS Mode Selector -->
+          <div class="cell-label" style="margin-top: 14px;" data-i18n="adcsMode">نظام التوجيه والتحكم الوضعي ADCS</div>
+          <div class="adcs-modes-grid" style="margin-top: 6px;">
+            <button id="btn-adcs-prograde" class="adcs-btn active" data-i18n="adcsPrograde">أمامي (+v)</button>
+            <button id="btn-adcs-retrograde" class="adcs-btn" data-i18n="adcsRetrograde">عكسي (-v)</button>
+            <button id="btn-adcs-normal" class="adcs-btn" data-i18n="adcsNormal">عمودي (+h)</button>
+            <button id="btn-adcs-antinormal" class="adcs-btn" data-i18n="adcsAntiNormal">مضاد (-h)</button>
+            <button id="btn-adcs-earth" class="adcs-btn" data-i18n="adcsEarth">توجيه للأرض</button>
+            <button id="btn-adcs-sun" class="adcs-btn" data-i18n="adcsSun">توجيه للشمس</button>
+            <button id="btn-adcs-target" class="adcs-btn" data-i18n="adcsTarget">توجيه للهدف</button>
+          </div>
+        </div>
+
+        <!-- Tab 5: Lagrange Points & N-Body Physics -->
+        <div id="tab-lagrange" class="tab-content">
+          <div class="formula-callout" id="eq-rk4"></div>
+
+          <div style="font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px;">
+            نقاط لاغرانج (L1 إلى L5) تمثل حلول التوازن الدقيق في مسألة الأجسام الثلاثة المقيدة الدائرية (CR3BP)، حيث تتوازن قوى الجاذبية مع قوة الطرد المركزي المشتركة في الإطار المرجعي الدوار.
+          </div>
+
+          <div class="telemetry-grid">
+            <div class="telemetry-cell" style="grid-column: span 2; background: rgba(191, 90, 242, 0.1); border: 1px solid var(--purple-glow); padding: 8px; border-radius: 6px;">
+              <span class="cell-label" style="color: var(--purple-glow);">نقطة لاغرانج L2 (موقع تلسكوب جيمس ويب)</span>
+              <span class="cell-value" style="font-size: 11px;">المسافة: 1,500,000 كم خلف الأرض | مدار هالة دوري غير مستقر يتطلب تصحيحات دورية (Station Keeping)</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label">L1 (بين الأرض والقمر/الشمس)</span>
+              <span class="cell-value">موقع مراصد الرياح الشمسية (SOHO / DSCOVR)</span>
+            </div>
+            <div class="telemetry-cell">
+              <span class="cell-label">L4 & L5 (نقاط طروادة المستقرة)</span>
+              <span class="cell-value">استقرار ديناميكي تلقائي بزاوية 60°</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Bottom Telemetry Ticker -->
+  <footer class="dsn-ticker-bar">
+    <div class="ticker-item">
+      <span>DSN STATUS:</span>
+      <span class="active">70M NETWORK TRACKING NOMINAL</span>
+    </div>
+    <div class="ticker-item">
+      <span>PROPULSION:</span>
+      <span class="active">OMS BIPROPELLANT READY</span>
+    </div>
+    <div class="ticker-item">
+      <span>INTEGRATOR:</span>
+      <span class="active">4TH-ORDER RUNGE-KUTTA (RK4) + J2</span>
+    </div>
+    <div class="ticker-item">
+      <span style="color: var(--cyan-glow);">© أ. طارق ابوعشي | Tareq Abuashi</span>
+    </div>
+  </footer>
+
+</body>
+</html>
