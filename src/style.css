@@ -1,0 +1,611 @@
+@import 'katex/dist/katex.min.css';
+
+:root {
+  --bg-primary: #06080f;
+  --panel-bg: rgba(10, 16, 28, 0.82);
+  --panel-border: rgba(0, 229, 255, 0.18);
+  --panel-border-hover: rgba(0, 229, 255, 0.45);
+  --text-main: #e2e8f0;
+  --text-muted: #8492a6;
+  --cyan-glow: #00e5ff;
+  --amber-glow: #ffd000;
+  --green-glow: #00ff88;
+  --red-alert: #ff3b30;
+  --purple-glow: #bf5af2;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+body.rtl-mode {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Segoe UI', Tahoma, 'Inter', sans-serif;
+}
+
+/* 3D WebGL Canvas Layer */
+#webgl-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Top Flight Director Bar */
+.flight-director-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  background: linear-gradient(180deg, rgba(6, 10, 18, 0.94) 0%, rgba(6, 10, 18, 0.7) 100%);
+  border-bottom: 1px solid var(--panel-border);
+  backdrop-filter: blur(12px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mission-logo-radar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cyan-glow);
+  position: relative;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+}
+
+.mission-logo-radar::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--cyan-glow);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.mission-logo-radar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  border-top: 2px solid transparent;
+  border-right: 2px solid var(--cyan-glow);
+  animation: radar-sweep 2s linear infinite;
+}
+
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.brand-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+
+.brand-subtitle {
+  font-size: 11px;
+  color: var(--cyan-glow);
+  font-family: var(--font-mono);
+}
+
+.author-pill {
+  font-size: 11px;
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  padding: 3px 8px;
+  border-radius: 12px;
+  color: var(--cyan-glow);
+  font-weight: 500;
+}
+
+/* Time Warp Controls */
+.time-warp-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.warp-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.warp-btn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.warp-btn.active {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: var(--cyan-glow);
+  color: var(--cyan-glow);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+
+/* Camera Bar */
+.camera-quick-bar {
+  display: flex;
+  gap: 6px;
+}
+
+.cam-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.cam-btn.active, .cam-btn:hover {
+  border-color: var(--cyan-glow);
+  color: var(--cyan-glow);
+  background: rgba(0, 229, 255, 0.12);
+}
+
+/* Top Right Action Tools */
+.director-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-main);
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-btn:hover {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--cyan-glow);
+}
+
+/* Main HUD Layout (Left Telemetry + Right Operations Panel) */
+.hud-layout {
+  position: absolute;
+  top: 60px;
+  left: 12px;
+  right: 12px;
+  bottom: 32px;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 5;
+}
+
+.hud-left-rail, .hud-right-panel {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hud-left-rail {
+  width: 320px;
+}
+
+.hud-right-panel {
+  width: 440px;
+}
+
+/* Glass Panels */
+.glass-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  backdrop-filter: blur(14px);
+  padding: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.2s;
+}
+
+.glass-panel:hover {
+  border-color: var(--panel-border-hover);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--cyan-glow);
+  font-family: var(--font-mono);
+}
+
+/* Telemetry Grid */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 12px;
+}
+
+.telemetry-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.cell-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cell-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 1px;
+}
+
+.cell-value.highlight-cyan { color: var(--cyan-glow); }
+.cell-value.highlight-amber { color: var(--amber-glow); }
+.cell-value.highlight-green { color: var(--green-glow); }
+
+/* Mini Strip Charts Container */
+.charts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chart-wrapper {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.chart-title {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+
+canvas.strip-chart {
+  width: 100%;
+  height: 38px;
+  display: block;
+}
+
+/* Tab Navigation for Operations Panel */
+.panel-tab-bar {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 4px;
+  font-size: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.tab-btn.active {
+  background: rgba(0, 229, 255, 0.18);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+body.rtl-mode .tab-content {
+  padding-right: 0;
+  padding-left: 4px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Custom Scrollbar */
+.tab-content::-webkit-scrollbar {
+  width: 4px;
+}
+.tab-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.25);
+  border-radius: 4px;
+}
+
+/* Orbit Sliders */
+.slider-group {
+  margin-bottom: 10px;
+}
+
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+
+.slider-label {
+  font-size: 11px;
+  color: var(--text-main);
+}
+
+.slider-num-input {
+  width: 70px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--cyan-glow);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  text-align: right;
+}
+
+body.rtl-mode .slider-num-input {
+  text-align: left;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--cyan-glow);
+  cursor: pointer;
+}
+
+/* Preset Buttons Grid */
+.preset-button-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.preset-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  padding: 5px 2px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.preset-btn:hover {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: var(--cyan-glow);
+}
+
+/* Mission Cards */
+.mission-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mission-card:hover {
+  border-color: var(--cyan-glow);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+.mission-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--cyan-glow);
+  margin-bottom: 4px;
+}
+
+.mission-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.btn-launch-mission {
+  background: rgba(0, 229, 255, 0.18);
+  border: 1px solid var(--cyan-glow);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.btn-launch-mission:hover {
+  background: var(--cyan-glow);
+  color: #000;
+}
+
+/* ADCS Controls */
+.adcs-modes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.adcs-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-main);
+  padding: 6px 2px;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.adcs-btn.active {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: var(--cyan-glow);
+  color: var(--cyan-glow);
+}
+
+/* Directional Burn Control Vectors */
+.burn-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.burn-btn {
+  background: rgba(255, 208, 0, 0.1);
+  border: 1px solid rgba(255, 208, 0, 0.3);
+  color: var(--amber-glow);
+  padding: 6px 4px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.burn-btn:hover {
+  background: rgba(255, 208, 0, 0.25);
+}
+
+/* Mathematical Equation Box */
+.formula-callout {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 8px 0;
+  overflow-x: auto;
+  font-size: 12px;
+}
+
+/* Badges */
+.badge-online {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--green-glow);
+  border: 1px solid var(--green-glow);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-family: var(--font-mono);
+}
+
+.badge-offline {
+  background: rgba(255, 59, 48, 0.15);
+  color: var(--red-alert);
+  border: 1px solid var(--red-alert);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-family: var(--font-mono);
+}
+
+/* Bottom Telemetry Ticker */
+.dsn-ticker-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: rgba(6, 10, 18, 0.95);
+  border-top: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  z-index: 10;
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ticker-item span.active {
+  color: var(--cyan-glow);
+}
